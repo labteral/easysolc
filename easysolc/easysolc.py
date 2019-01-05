@@ -19,18 +19,44 @@ class Solc:
                 solc_path = solc_path[:-1]
             if solc_path[::-1][:4] == 'clos':
                 self.solc_path = solc_path
-                return
-            self.solc_path = solc_path + '/solc'
-            return
-        self.solc_path = 'solc'
+            else:
+                self.solc_path = solc_path + '/solc'
+        else:
+            self.solc_path = 'solc'
 
-    @staticmethod
-    def get_contract(abi_filepath, bytecode_filepath):
-        with open(abi_filepath, 'r') as abi_file:
-            abi = json.loads(abi_file.read())
-        with open(bytecode_filepath, 'r') as bytecode_file:
-            bytecode = bytecode_file.read()
-        contract = Web3().eth.contract(abi=abi, bytecode=bytecode)
+        self.version = self.invoke_solc('--version').split('\n')[1].split()[1]
+        logging.info(f'Solc version: {self.version}')
+
+    def invoke_solc(self, args):
+        if type(args) == str:
+            args = [args]
+        str_args = f'{self.solc_path} ' + ' '.join(args)
+        try:
+            output = subprocess.check_output(
+                str_args, shell=True, stderr=subprocess.STDOUT).decode('utf-8')
+            return output
+        except subprocess.CalledProcessError as e:
+            output = e.output.decode('utf-8')
+            logging.error(output)
+
+    def get_contract_instance(self,
+                              contract_dict=None,
+                              source=None,
+                              contract_name=None,
+                              abi_filepath=None,
+                              bytecode_filepath=None):
+        contract = None
+        if source and contract_name:
+            contract_dict = self.compile(source=source)[contract_name]
+        if contract_dict:
+            contract = Web3().eth.contract(
+                abi=contract_dict['abi'], bytecode=contract_dict['bytecode'])
+        elif abi_filepath and bytecode_filepath:
+            with open(abi_filepath, 'r') as abi_file:
+                abi = json.loads(abi_file.read())
+            with open(bytecode_filepath, 'r') as bytecode_file:
+                bytecode = bytecode_file.read()
+            contract = Web3().eth.contract(abi=abi, bytecode=bytecode)
         return contract
 
     def compile(self,
@@ -40,7 +66,7 @@ class Solc:
                 optimize_runs=200,
                 pretty_json=False,
                 libraries=None,
-                output_dir='.',
+                output_dir=None,
                 overwrite=True,
                 combined_json=None,
                 gas=False,
@@ -79,6 +105,8 @@ class Solc:
                 if type(libraries) == str:
                     libraries = libraries.split()
                 args += ['--libraries'] + libraries
+            if output_dir:
+                args += ['--output-dir', output_dir]
             if overwrite:
                 args.append('--overwrite')
             if combined_json:
@@ -134,12 +162,28 @@ class Solc:
             if metadata:
                 args.append('--metadata')
 
-        args += ['--output-dir', output_dir, source]
-        args = [self.solc_path] + args
+        args += [source]
+        output = self.invoke_solc(args)
 
-        try:
-            output = subprocess.check_output(
-                ' '.join(args), shell=True, stderr=subprocess.STDOUT)
-            logging.info(output.decode('utf-8'))
-        except subprocess.CalledProcessError as e:
-            logging.error(e.output.decode('utf-8'))
+        dict_ = {}
+        output = output.split('\n')
+        for i in range(len(output)):
+            if not output[i]:
+                continue
+            if output[i][0] == '=':
+                contract_name = output[i].split()[1].split(':')[1]
+                dict_[contract_name] = {}
+                i += 1
+                while not output[i]:
+                    i += 1
+                while i < len(output) and output[i] and output[i][0] != '=':
+                    if output[i][:7] == 'Binary:':
+                        i += 1
+                        dict_[contract_name]['bytecode'] = output[i]
+                    elif output[i][:17] == 'Contract JSON ABI':
+                        i += 1
+                        dict_[contract_name]['abi'] = json.loads(output[i])
+                    else:
+                        logging.warn(output[i])
+                    i += 1
+        return dict_
