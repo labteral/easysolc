@@ -53,7 +53,14 @@ contract = solc.get_contract_instance(source='ballot.sol',
 
 Get a web3 contract instance given the files containing the ABI and bytecode:
 ```python
-contract = solc.get_contract_instance('ballot.abi', 'ballot.bin')
+contract = solc.get_contract_instance(abi_file='ballot.abi',
+                                      bytecode_file='ballot.bin')
+```
+
+Get a web3 contract instance given the ABI file and the contract address:
+```python
+contract = solc.get_contract_instance(abi_file='ballot.abi',
+                                      address=0x0)
 ```
 
 Get a dictionary with the ABI and bytecode given the source code:

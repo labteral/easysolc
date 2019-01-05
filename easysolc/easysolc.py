@@ -43,20 +43,28 @@ class Solc:
                               contract_dict=None,
                               source=None,
                               contract_name=None,
-                              abi_filepath=None,
-                              bytecode_filepath=None):
+                              address=None,
+                              abi_file=None,
+                              bytecode_file=None):
         contract = None
         if source and contract_name:
             contract_dict = self.compile(source=source)[contract_name]
         if contract_dict:
             contract = Web3().eth.contract(
-                abi=contract_dict['abi'], bytecode=contract_dict['bytecode'])
-        elif abi_filepath and bytecode_filepath:
-            with open(abi_filepath, 'r') as abi_file:
+                abi=contract_dict['abi'], bytecode=contract_dict['bytecode'], address=address)            
+        elif abi_file:
+            with open(abi_file, 'r') as abi_file:
                 abi = json.loads(abi_file.read())
-            with open(bytecode_filepath, 'r') as bytecode_file:
-                bytecode = bytecode_file.read()
-            contract = Web3().eth.contract(abi=abi, bytecode=bytecode)
+            if address:
+                contract = Web3().eth.contract(abi=abi, address=address)
+            elif bytecode_file:
+                bytecode = None
+                if bytecode_file:
+                    with open(bytecode_file, 'r') as bytecode_file:
+                        bytecode = bytecode_file.read()
+                    contract = Web3().eth.contract(abi=abi, bytecode=bytecode)
+                else:
+                    raise ValueError("The bytecode or the address must be provided")
         return contract
 
     def compile(self,
