@@ -9,6 +9,11 @@ This library also faciliates the creation of web3 contract instances directly fr
 All the `solc` parameters are supported and they can be set when invoking the `compile` method. However, you can also specify all the arguments directly with the `args` parameter.
 
 # Usage
+## Installation
+```bash
+pip install easysolc
+```
+
 ## Create an instance of the compiler
 If a path is not indicated, the binary used will be the first accesible following the paths of the `$PATH` environment variable:
 ```python
