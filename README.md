@@ -64,9 +64,13 @@ contract = solc.get_contract_instance(abi_file='ballot.abi',
 
 Get a web3 contract instance given the ABI file and the contract address:
 ```python
-contract = solc.get_contract_instance(abi_file='ballot.abi',
+from web3 import Web3
+w3 = Web3(Web3.IPCProvider("~/Library/Ethereum/geth.ipc"))
+contract = solc.get_contract_instance(w3=w3,
+                                      abi_file='ballot.abi',
                                       address=0x0)
 ```
+> **Note**. If you are going to interact with the contract, instead of deploying it, fill the web3 parameter with your instance.
 
 Get a dictionary with the ABI and bytecode given the source code:
 ```python
