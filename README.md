@@ -68,7 +68,7 @@ from web3 import Web3
 w3 = Web3(Web3.IPCProvider("~/Library/Ethereum/geth.ipc"))
 contract = solc.get_contract_instance(w3=w3,
                                       abi_file='ballot.abi',
-                                      address=0x0)
+                                      address="0x0")
 ```
 > **Note**. If you are going to interact with the contract, instead of deploying it, fill the web3 parameter with your instance.
 
