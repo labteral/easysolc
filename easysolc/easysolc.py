@@ -24,8 +24,10 @@ class Solc:
         else:
             self.solc_path = 'solc'
 
-        self.version = self.invoke_solc('--version').split('\n')[1].split()[1]
-        logging.info(f'Solc version: {self.version}')
+    def get_version(self):
+        if not hasattr(self, 'version'):
+            self.version = self.invoke_solc('--version').split('\n')[1].split()[1]
+        return self.version
 
     def invoke_solc(self, args):
         if type(args) == str:
@@ -103,6 +105,9 @@ class Solc:
                 userdoc=False,
                 devdoc=False,
                 metadata=False):
+
+        logging.info(f'Solc version: {self.version}')
+
         if type(args) == str:
             args = args.split()
         if not args:
