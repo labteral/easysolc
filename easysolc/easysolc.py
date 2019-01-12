@@ -13,6 +13,7 @@ class Solc:
         logging.basicConfig(
             format='%(asctime)-15s [%(levelname)s] %(message)s',
             datefmt='%Y-%m-%d %H:%M:%S')
+        self.version = None
         if solc_path:
             solc_path = solc_path
             if solc_path[-1] == '/':
@@ -25,7 +26,7 @@ class Solc:
             self.solc_path = 'solc'
 
     def get_version(self):
-        if not hasattr(self, 'version'):
+        if self.version == None:
             self.version = self.invoke_solc('--version').split('\n')[1].split()[1]
         return self.version
 
@@ -106,7 +107,7 @@ class Solc:
                 devdoc=False,
                 metadata=False):
 
-        logging.info(f'Solc version: {self.version}')
+        logging.info(f'Solc version: {self.get_version()}')
 
         if type(args) == str:
             args = args.split()
