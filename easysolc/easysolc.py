@@ -123,7 +123,6 @@ class Solc:
             if libraries:
                 if type(libraries) == str:
                     libraries = libraries.split()
-                # args += ['--libraries'] + libraries
             if output_dir:
                 args += ['--output-dir', output_dir]
             if overwrite:
@@ -210,6 +209,8 @@ class Solc:
                         file_path = output[i]
                         if self.parse_for_file(file_path).split(':')[1] not in library.keys():
                             library[self.parse_for_file(file_path).split(':')[1]] = "__" + output[i][3:39] + "__"
+                    elif output[i] == " ":
+                        pass
                     else:
                         logging.warn(output[i])
                     i += 1
