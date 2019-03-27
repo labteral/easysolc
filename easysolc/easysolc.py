@@ -214,18 +214,19 @@ class Solc:
                     else:
                         logging.warn(output[i])
                     i += 1
-        for name, contract in dict_.items():
-            # print("Inserting Libraries For {}".format(name))
-            # print("Libraries are: {}".format(library))
-            for library_name, library_id in library.items():
-                for lib in libraries:
-                    lib_name = lib.split(':')[0]
-                    lib_address = lib.split(':')[1]
-                    if library_name == lib_name:
-                        contract['bytecode'] = self.insert_library(contract['bytecode'], library_id, lib_address)
-            lib_check = contract['bytecode'].find("__$")
-            if lib_check != -1:
-                raise Exception("There the library '{}' was not passed.".format(contract['bytecode'][contract][lib_check + 36]))
+        if libraries is not None and len(libraries) > 0:
+            for name, contract in dict_.items():
+                # print("Inserting Libraries For {}".format(name))
+                # print("Libraries are: {}".format(library))
+                for library_name, library_id in library.items():
+                    for lib in libraries:
+                        lib_name = lib.split(':')[0]
+                        lib_address = lib.split(':')[1]
+                        if library_name == lib_name:
+                            contract['bytecode'] = self.insert_library(contract['bytecode'], library_id, lib_address)
+                lib_check = contract['bytecode'].find("__$")
+                if lib_check != -1:
+                    raise Exception("There the library '{}' was not passed.".format(contract['bytecode'][contract][lib_check + 36]))
         return dict_
 
     def parse_for_file(self, string):
