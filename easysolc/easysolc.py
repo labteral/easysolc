@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import os
 from web3 import Web3
 import json
 import subprocess
@@ -108,6 +109,7 @@ class Solc:
                 metadata=False):
 
         logging.info(f'Solc version: {self.get_version()}')
+        logging.info(f'Compiling: {source}')
 
         if type(args) == str:
             args = args.split()
@@ -121,7 +123,6 @@ class Solc:
             if libraries:
                 if type(libraries) == str:
                     libraries = libraries.split()
-                args += ['--libraries'] + libraries
             if output_dir:
                 args += ['--output-dir', output_dir]
             if overwrite:
@@ -182,8 +183,12 @@ class Solc:
         args += [source]
         output = self.invoke_solc(args)
 
+        library = {}
         dict_ = {}
         output = output.split('\n')
+        for i, val in enumerate(output):
+            if val == "":
+                output[i] = " "
         for i in range(len(output)):
             if not output[i]:
                 continue
@@ -200,7 +205,45 @@ class Solc:
                     elif output[i][:17] == 'Contract JSON ABI':
                         i += 1
                         dict_[contract_name]['abi'] = json.loads(output[i])
+                    elif output[i][:4] == '// $':
+                        file_path = output[i]
+                        if self.parse_for_file(file_path).split(':')[1] not in library.keys():
+                            library[self.parse_for_file(file_path).split(':')[1]] = "__" + output[i][3:39] + "__"
+                    elif output[i] == " ":
+                        pass
                     else:
                         logging.warn(output[i])
                     i += 1
+        if libraries is not None and len(libraries) > 0:
+            for name, contract in dict_.items():
+                # print("Inserting Libraries For {}".format(name))
+                # print("Libraries are: {}".format(library))
+                for library_name, library_id in library.items():
+                    for lib in libraries:
+                        lib_name = lib.split(':')[0]
+                        lib_address = lib.split(':')[1]
+                        if library_name == lib_name:
+                            contract['bytecode'] = self.insert_library(contract['bytecode'], library_id, lib_address)
+                lib_check = contract['bytecode'].find("__$")
+                if lib_check != -1:
+                    raise Exception("There the library '{}' was not passed.".format(contract['bytecode'][contract][lib_check + 36]))
         return dict_
+
+    def parse_for_file(self, string):
+        directories = []
+        for i, val in enumerate(string):
+            if val == "/":
+                directories.append(i)
+        if len(directories) > 0:
+            file_start = directories[len(directories) - 1] + 1
+            return string[file_start:]
+        else:
+            return ""
+
+    def insert_library(self, bytecode, library_id, library_address):
+        while True:
+            if bytecode.find(library_id) != -1:
+                addr = library_address[2:]
+                bytecode = bytecode.replace(library_id, addr)
+            else:
+                return bytecode
