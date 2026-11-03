@@ -3,11 +3,20 @@
 
 from setuptools import find_packages
 from setuptools import setup
-import easysolc
+from pathlib import Path
+import re
+
+ROOT = Path(__file__).parent
+VERSION = re.search(r"^__version__ = '([^']+)'",
+                    (ROOT / 'easysolc/__init__.py').read_text(), re.M)[1]
 
 setup(
     name='easysolc',
-    version=easysolc.__version__,
+    version=VERSION,
+    long_description='Python wrapper for solc (Solidity compiler).',
+    long_description_content_type='text/plain',
+    python_requires='>=3.10,<4',
+    install_requires=['web3>=7,<9'],
     description='Python wrapper for solc (Solidity compiler)',
     url='https://github.com/brunneis/easysolc',
     author='Rodrigo Martínez',
@@ -21,7 +30,7 @@ setup(
         "Intended Audience :: Developers",
         "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
         "Operating System :: POSIX :: Linux",
-        "Programming Language :: Python :: 3.6",
-        "Programming Language :: Python :: Implementation :: PyPy",
+        "Programming Language :: Python :: 3.14",
+        "Programming Language :: Python :: Implementation :: CPython",
         "Topic :: Software Development :: Libraries :: Python Modules",
     ])

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import os
+from glob import glob, has_magic
 from web3 import Web3
 import json
 import subprocess
@@ -34,10 +34,10 @@ class Solc:
     def invoke_solc(self, args):
         if type(args) == str:
             args = [args]
-        str_args = f'{self.solc_path} ' + ' '.join(args)
         try:
             output = subprocess.check_output(
-                str_args, shell=True, stderr=subprocess.STDOUT).decode('utf-8')
+                [self.solc_path, *(str(arg) for arg in args)],
+                stderr=subprocess.STDOUT).decode('utf-8')
             return output
         except subprocess.CalledProcessError as e:
             output = e.output.decode('utf-8')
@@ -180,7 +180,8 @@ class Solc:
             if metadata:
                 args.append('--metadata')
 
-        args += [source]
+        matches = sorted(glob(source)) if has_magic(source) else []
+        args += matches or [source]
         output = self.invoke_solc(args)
 
         library = {}
@@ -193,7 +194,7 @@ class Solc:
             if not output[i]:
                 continue
             if output[i][0] == '=':
-                contract_name = output[i].split()[1].split(':')[1]
+                contract_name = output[i].strip('=').strip().rsplit(':', 1)[1]
                 dict_[contract_name] = {}
                 i += 1
                 while not output[i]:
@@ -215,9 +216,7 @@ class Solc:
                         logging.warn(output[i])
                     i += 1
         if libraries is not None and len(libraries) > 0:
-            for name, contract in dict_.items():
-                # print("Inserting Libraries For {}".format(name))
-                # print("Libraries are: {}".format(library))
+            for contract in dict_.values():
                 for library_name, library_id in library.items():
                     for lib in libraries:
                         lib_name = lib.split(':')[0]
